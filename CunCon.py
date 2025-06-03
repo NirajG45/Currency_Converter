@@ -1,86 +1,54 @@
-from flask import Flask, render_template, request, jsonify
 import requests
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
-import os
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
-API_URL = "https://api.exchangerate.host"
-CURRENCY_SYMBOLS = {}
 
-def fetch_symbols():
-    global CURRENCY_SYMBOLS
-    response = requests.get(f"{API_URL}/symbols")
+API_URL = "https://open.er-api.com/v6/latest/"
+
+def get_currencies():
+    url = API_URL + "USD"
+    response = requests.get(url)
     data = response.json()
-    if data.get("success", True):
-        CURRENCY_SYMBOLS = data["symbols"]
+    print("DEBUG: API response for currencies:", data)
+    if data.get("result") == "success":
+        return sorted(data["rates"].keys())
     else:
-        CURRENCY_SYMBOLS = {}
+        print("Error fetching currencies:", data.get("error-type", "Unknown error"))
+        return []
 
-def get_exchange_rate(base, target):
-    url = f"{API_URL}/latest?base={base}&symbols={target}"
+def get_rates(base_currency):
+    url = API_URL + base_currency
     response = requests.get(url)
     data = response.json()
-    if "rates" in data:
-        rate = data["rates"].get(target)
-        timestamp = data.get("date")
-        return rate, timestamp
-    return None, None
-
-def get_historical_rates(base, target):
-    end_date = datetime.now().date()
-    start_date = end_date - timedelta(days=6)
-    url = f"{API_URL}/timeseries?start_date={start_date}&end_date={end_date}&base={base}&symbols={target}"
-    response = requests.get(url)
-    data = response.json()
-    if data.get("success"):
-        dates = list(data["rates"].keys())
-        dates.sort()
-        rates = [data["rates"][date][target] for date in dates]
-        return dates, rates
-    return [], []
+    print("DEBUG: API response for rates:", data)
+    if data.get("result") == "success":
+        return data["rates"]
+    else:
+        print("Error fetching rates:", data.get("error-type", "Unknown error"))
+        return {}
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if not CURRENCY_SYMBOLS:
-        fetch_symbols()
+    currencies = get_currencies()
     result = None
-    last_updated = None
-    graph_path = None
 
     if request.method == "POST":
-        from_currency = request.form["from_currency"]
-        to_currency = request.form["to_currency"]
-        amount = float(request.form.get("amount", 1))
+        from_currency = request.form.get("from_currency")
+        to_currency = request.form.get("to_currency")
+        amount = request.form.get("amount")
 
-        rate, last_updated = get_exchange_rate(from_currency, to_currency)
-        if rate:
-            result = round(rate * amount, 4)
+        try:
+            amount = float(amount)
+            rates = get_rates(from_currency)
+            if to_currency in rates:
+                converted_amount = round(amount * rates[to_currency], 2)
+                result = f"{amount} {from_currency} = {converted_amount} {to_currency}"
+            else:
+                result = "Conversion not supported for selected currency."
+        except Exception as e:
+            result = f"Error: {str(e)}"
 
-            # Graph creation
-            dates, rates = get_historical_rates(from_currency, to_currency)
-            if dates and rates:
-                plt.figure(figsize=(6, 3))
-                plt.plot(dates, rates, marker='o')
-                plt.title(f'{from_currency} to {to_currency} (Last 7 Days)')
-                plt.xlabel('Date')
-                plt.ylabel('Rate')
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                graph_path = "static/graph.png"
-                plt.savefig(graph_path)
-                plt.close()
-
-    return render_template("index.html", currencies=CURRENCY_SYMBOLS, result=result,
-                           last_updated=last_updated, graph_path=graph_path)
-
-@app.route("/rate", methods=["POST"])
-def auto_fetch_rate():
-    data = request.json
-    base = data.get("base")
-    target = data.get("target")
-    rate, last_updated = get_exchange_rate(base, target)
-    return jsonify({"rate": rate, "last_updated": last_updated})
+    return render_template("index.html", currencies=currencies, result=result)
 
 if __name__ == "__main__":
     app.run(debug=True)
