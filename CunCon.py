@@ -5,7 +5,7 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 
 # Get API key from environment
-API_KEY = os.getenv("9e5500a9fb2afdc1d7b61e5073e3ee5d")
+API_KEY = os.getenv("EXCHANGERATE_API_KEY")
 
 def get_currencies():
     url = f"https://api.exchangerate.host/symbols?access_key={API_KEY}"
