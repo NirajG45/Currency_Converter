@@ -3,13 +3,19 @@ import requests
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
-API_KEY = os.getenv('9e5500a9fb2afdc1d7b61e5073e3ee5d')
+
+# Get API key from environment
+API_KEY = os.getenv("9e5500a9fb2afdc1d7b61e5073e3ee5d")
 
 def get_currencies():
     url = f"https://api.exchangerate.host/symbols?access_key={API_KEY}"
     response = requests.get(url)
     data = response.json()
-    return sorted(data["symbols"].keys())
+    if data.get("success") and "symbols" in data:
+        return sorted(data["symbols"].keys())
+    else:
+        print("API response error:", data)
+        return []
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -26,8 +32,11 @@ def index():
             url = f"https://api.exchangerate.host/convert?from={from_currency}&to={to_currency}&amount={amount}&access_key={API_KEY}"
             response = requests.get(url)
             data = response.json()
-            converted = round(data["result"], 2)
-            result = f"{amount} {from_currency} = {converted} {to_currency}"
+            if data.get("success") and "result" in data:
+                converted = round(data["result"], 2)
+                result = f"{amount} {from_currency} = {converted} {to_currency}"
+            else:
+                result = "Conversion failed. Please try again later."
         except Exception as e:
             result = f"Error: {e}"
 
