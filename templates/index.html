@@ -7,11 +7,12 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 500px;
+            max-width: 480px;
             margin: 50px auto;
             padding: 20px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            background-color: #f9f9f9;
         }
         h1 {
             text-align: center;
@@ -23,17 +24,17 @@
             gap: 15px;
         }
         select, input[type="number"] {
-            padding: 8px;
+            padding: 10px;
             font-size: 16px;
         }
         button {
-            padding: 10px;
+            padding: 12px;
             background-color: #007bff;
             color: white;
             border: none;
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 6px;
         }
         button:hover {
             background-color: #0056b3;
@@ -41,11 +42,12 @@
         .result {
             margin-top: 20px;
             padding: 15px;
-            background-color: #e2f0d9;
-            border: 1px solid #a5d6a7;
-            border-radius: 5px;
+            background-color: #d1e7dd;
+            border: 1px solid #badbcc;
+            border-radius: 6px;
             font-weight: bold;
             text-align: center;
+            color: #0f5132;
         }
     </style>
 </head>
@@ -53,19 +55,19 @@
     <h1>Currency Converter</h1>
     <form method="POST">
         <label for="amount">Amount:</label>
-        <input type="number" name="amount" id="amount" step="any" required />
+        <input type="number" id="amount" name="amount" step="any" min="0" required />
 
         <label for="from_currency">From Currency:</label>
-        <select name="from_currency" id="from_currency" required>
+        <select id="from_currency" name="from_currency" required>
             {% for cur in currencies %}
-            <option value="{{ cur }}">{{ cur }}</option>
+                <option value="{{ cur }}">{{ cur }}</option>
             {% endfor %}
         </select>
 
         <label for="to_currency">To Currency:</label>
-        <select name="to_currency" id="to_currency" required>
+        <select id="to_currency" name="to_currency" required>
             {% for cur in currencies %}
-            <option value="{{ cur }}">{{ cur }}</option>
+                <option value="{{ cur }}">{{ cur }}</option>
             {% endfor %}
         </select>
 
