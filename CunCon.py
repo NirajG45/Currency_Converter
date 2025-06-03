@@ -1,14 +1,12 @@
-import os
 import requests
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-# Get API key from environment
-API_KEY = os.getenv("EXCHANGERATE_API_KEY")
+API_KEY = "9e5500a9fb2afdc1d7b61e5073e3ee5d"  # Your API key here
 
 def get_currencies():
-    url = f"https://api.exchangerate.host/symbols?access_key={API_KEY}"
+    url = f"http://data.fixer.io/api/symbols?access_key={API_KEY}"
     response = requests.get(url)
     data = response.json()
     if data.get("success") and "symbols" in data:
@@ -29,7 +27,7 @@ def index():
 
         try:
             amount = float(amount)
-            url = f"https://api.exchangerate.host/convert?from={from_currency}&to={to_currency}&amount={amount}&access_key={API_KEY}"
+            url = f"http://data.fixer.io/api/convert?access_key={API_KEY}&from={from_currency}&to={to_currency}&amount={amount}"
             response = requests.get(url)
             data = response.json()
             if data.get("success") and "result" in data:
