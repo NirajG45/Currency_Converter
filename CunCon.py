@@ -3,7 +3,7 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-API_KEY = "c0a343874771ae0134ec89b19b34d883"  # Your API key here
+API_KEY = "9719b709bc98994bcad4ea28"  # Your API key here
 
 def get_currencies():
     url = f"http://data.fixer.io/api/symbols?access_key={API_KEY}"
