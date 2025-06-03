@@ -1,91 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
     <title>Currency Converter</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 480px;
-            margin: 50px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #f9f9f9;
+            font-family: Arial;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s, color 0.3s;
         }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        select, input[type="number"] {
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            padding: 12px;
-            background-color: #007bff;
+        .dark-mode {
+            background-color: #121212;
             color: white;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            border-radius: 6px;
         }
-        button:hover {
-            background-color: #0056b3;
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        .result {
+        .dark-mode .container {
+            background-color: #1e1e1e;
+        }
+        label, select, input, button {
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+        }
+        img {
+            max-width: 100%;
             margin-top: 20px;
-            padding: 15px;
-            background-color: #d1e7dd;
-            border: 1px solid #badbcc;
-            border-radius: 6px;
-            font-weight: bold;
-            text-align: center;
-            color: #0f5132;
         }
-        .attribution {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
+        .toggle-btn {
+            float: right;
+            margin-top: -40px;
         }
     </style>
 </head>
 <body>
-    <h1>Currency Converter</h1>
-    <form method="POST">
-        <label for="amount">Amount:</label>
-        <input type="number" id="amount" name="amount" step="any" min="0" required />
+    <div class="container">
+        <h2>🌐 Currency Converter</h2>
+        <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+        <form method="POST">
+            <label>From Currency:</label>
+            <select name="from_currency" id="from_currency" required>
+                {% for code, details in currencies.items() %}
+                    <option value="{{ code }}">{{ code }} - {{ details.description }}</option>
+                {% endfor %}
+            </select>
 
-        <label for="from_currency">From Currency:</label>
-        <select id="from_currency" name="from_currency" required>
-            {% for cur in currencies %}
-                <option value="{{ cur }}">{{ cur }}</option>
-            {% endfor %}
-        </select>
+            <label>To Currency:</label>
+            <select name="to_currency" id="to_currency" required>
+                {% for code, details in currencies.items() %}
+                    <option value="{{ code }}">{{ code }} - {{ details.description }}</option>
+                {% endfor %}
+            </select>
 
-        <label for="to_currency">To Currency:</label>
-        <select id="to_currency" name="to_currency" required>
-            {% for cur in currencies %}
-                <option value="{{ cur }}">{{ cur }}</option>
-            {% endfor %}
-        </select>
+            <label>Amount:</label>
+            <input type="number" name="amount" value="1" min="0" step="any" required>
 
-        <button type="submit">Convert</button>
-    </form>
+            <button type="submit">Convert</button>
+        </form>
 
-    {% if result %}
-    <div class="result">{{ result }}</div>
-    {% endif %}
-
-    <div class="attribution">
-        Rates by <a href="https://www.exchangerate-api.com">ExchangeRate-API</a>
+        {% if result %}
+            <h3>Converted Result: {{ result }}</h3>
+            <p>🕓 Last Updated: {{ last_updated }}</p>
+            {% if graph_path %}
+                <img src="{{ graph_path }}" alt="Historical Graph">
+            {% endif %}
+        {% endif %}
     </div>
+
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        document.getElementById("from_currency").addEventListener("change", fetchRate);
+        document.getElementById("to_currency").addEventListener("change", fetchRate);
+
+        async function fetchRate() {
+            const base = document.getElementById("from_currency").value;
+            const target = document.getElementById("to_currency").value;
+
+            const response = await fetch("/rate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ base, target })
+            });
+
+            const data = await response.json();
+            if (data.rate && data.last_updated) {
+                alert(`1 ${base} = ${data.rate} ${target}\nLast Updated: ${data.last_updated}`);
+            }
+        }
+    </script>
 </body>
 </html>
