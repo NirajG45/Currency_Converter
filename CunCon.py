@@ -3,28 +3,28 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-API_KEY = "9719b709bc98994bcad4ea28"  # Your API key here
+API_URL = "https://open.er-api.com/v6/latest/"
 
 def get_currencies():
-    url = f"http://data.fixer.io/api/symbols?access_key={API_KEY}"
+    url = API_URL + "USD"
     response = requests.get(url)
     data = response.json()
-    print("DEBUG: API response for symbols:", data)
-    if data.get("success") and "symbols" in data:
-        return sorted(data["symbols"].keys())
+    print("DEBUG: API response for currencies:", data)
+    if data.get("result") == "success":
+        return sorted(data["rates"].keys())
     else:
-        print("Error fetching symbols:", data.get("error", "Unknown error"))
+        print("Error fetching currencies:", data.get("error-type", "Unknown error"))
         return []
 
-def get_latest_rates(base="EUR"):
-    url = f"http://data.fixer.io/api/latest?access_key={API_KEY}"
+def get_rates(base_currency):
+    url = API_URL + base_currency
     response = requests.get(url)
     data = response.json()
-    print("DEBUG: API response for latest rates:", data)
-    if data.get("success") and "rates" in data:
+    print("DEBUG: API response for rates:", data)
+    if data.get("result") == "success":
         return data["rates"]
     else:
-        print("Error fetching latest rates:", data.get("error", "Unknown error"))
+        print("Error fetching rates:", data.get("error-type", "Unknown error"))
         return {}
 
 @app.route("/", methods=["GET", "POST"])
@@ -39,18 +39,12 @@ def index():
 
         try:
             amount = float(amount)
-            rates = get_latest_rates()
-
-            # Fixer free plan base currency is EUR
-            if from_currency not in rates or to_currency not in rates:
-                result = "Conversion not supported for selected currency."
-            else:
-                # Convert amount to EUR first, then to target currency
-                amount_in_eur = amount / rates[from_currency]
-                converted_amount = amount_in_eur * rates[to_currency]
-                converted_amount = round(converted_amount, 2)
+            rates = get_rates(from_currency)
+            if to_currency in rates:
+                converted_amount = round(amount * rates[to_currency], 2)
                 result = f"{amount} {from_currency} = {converted_amount} {to_currency}"
-
+            else:
+                result = "Conversion not supported for selected currency."
         except Exception as e:
             result = f"Error: {str(e)}"
 
