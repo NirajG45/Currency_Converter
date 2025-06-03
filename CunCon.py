@@ -1,34 +1,35 @@
-from flask import Flask, render_template, request
+import os
 import requests
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
+API_KEY = os.getenv('9e5500a9fb2afdc1d7b61e5073e3ee5d')
 
-# Fetch currency list
 def get_currencies():
-    url = "https://api.exchangerate.host/symbols"
+    url = f"https://api.exchangerate.host/symbols?access_key={API_KEY}"
     response = requests.get(url)
     data = response.json()
     return sorted(data["symbols"].keys())
 
-# Home Route
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
     currencies = get_currencies()
 
     if request.method == "POST":
-        from_currency = request.form["from_currency"]
-        to_currency = request.form["to_currency"]
-        amount = request.form["amount"]
+        from_currency = request.form.get("from_currency")
+        to_currency = request.form.get("to_currency")
+        amount = request.form.get("amount")
 
         try:
             amount = float(amount)
-            url = f"https://api.exchangerate.host/convert?from={from_currency}&to={to_currency}&amount={amount}"
+            url = f"https://api.exchangerate.host/convert?from={from_currency}&to={to_currency}&amount={amount}&access_key={API_KEY}"
             response = requests.get(url)
             data = response.json()
-            result = f"{amount} {from_currency} = {data['result']:.2f} {to_currency}"
-        except:
-            result = "Invalid amount or conversion failed."
+            converted = round(data["result"], 2)
+            result = f"{amount} {from_currency} = {converted} {to_currency}"
+        except Exception as e:
+            result = f"Error: {e}"
 
     return render_template("index.html", currencies=currencies, result=result)
 
